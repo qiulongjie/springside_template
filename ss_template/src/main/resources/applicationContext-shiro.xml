@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+      xmlns:util="http://www.springframework.org/schema/util"
+      xmlns:aop="http://www.springframework.org/schema/aop"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="
+      http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+      http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
+      http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd"
+      default-lazy-init="true"
+      >
+
+	<description>Shiro安全配置</description>
+
+	<!-- Shiro's main business-tier object for web-enabled applications -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<property name="realm" ref="shiroDbRealm" />
+		<property name="cacheManager" ref="shiroEhcacheManager" />
+	</bean>
+
+	<!-- 項目自定义的Realm, 所有accountService依赖的dao都需要用depends-on声明 -->
+	<bean id="shiroDbRealm" class="com.common.template.service.account.ShiroDbRealm">
+		<property name="accountService" ref="accountService"/>
+	</bean>
+	
+	<!-- ############# 我加的  ******* Start ***** -->
+	
+	<!-- 基于Form表单的身份验证过滤器 -->
+    <bean id="authcFilter" class="com.common.template.shiro.MyFormAuthenticationFilter">
+        <!-- <property name="usernameParam" value="username"/>
+        <property name="passwordParam" value="password"/>
+        <property name="rememberMeParam" value="rememberMe"/>
+        <property name="failureKeyAttribute" value="shiroLoginFailure"/> -->
+    </bean>
+    
+    <!-- 登录验证码 验证过滤器 -->
+	<bean id="verifyCodeFilter" class="com.common.template.shiro.VerifyCodeFilter">
+	    <!-- 是否启用验证码验证   -->
+        <property name="isVerify" value="true"/>
+    </bean>
+    
+    <!-- 权限资源配置 -->  
+    <bean id="filterChainDefinitionsService" class="com.common.template.shiro.SimpleFilterChainDefinitionsService">  
+        <property name="definitions">  
+            <value>  
+                /login/** = verifyCode,authc
+				/logout/** = logout
+				/static/** = anon
+				/api/** = anon
+            </value>  
+        </property>  
+    </bean>
+    
+    <!-- ############# 我加的  ******* END ***** -->
+	
+	<!-- Shiro Filter -->
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<property name="securityManager" ref="securityManager" />
+		<property name="loginUrl" value="/login" />
+		<property name="successUrl" value="/" />
+		<property name="filters">
+            <util:map>
+                <entry key="authc" value-ref="authcFilter"/>
+                <entry key="verifyCode" value-ref="verifyCodeFilter"/>
+            </util:map>
+        </property>
+		<!-- <property name="filterChainDefinitions">
+			<value>
+				/login = authc
+				/logout = logout
+				/static/** = anon
+				/api/** = anon
+				/register/** = anon
+				/admin/** = roles[admin]
+				/** = user
+			</value>
+		</property> -->
+	</bean>
+	
+	<!-- 用户授权信息Cache, 采用EhCache -->
+	<bean id="shiroEhcacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+		<property name="cacheManagerConfigFile" value="classpath:ehcache/ehcache-shiro.xml"/>
+	</bean>
+	
+	<!-- 保证实现了Shiro内部lifecycle函数的bean执行 -->
+	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+</beans>
