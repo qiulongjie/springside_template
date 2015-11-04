@@ -67,7 +67,7 @@ public class AccountService {
 
 	public void registerUser(User user) {
 		entryptPassword(user);
-		// 设置默认角色为游客 只有访问首页的权限
+		// 设置默认角色 只有访问首页的权限
 		user.setRoles("youke");
 		user.setRegisterDate(clock.getCurrentDate());
 

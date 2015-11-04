@@ -84,6 +84,7 @@ public class PermissionServiceImpl implements PermissionService{
 
 	public void deleteRole(String roleCode) {
 		roleDao.deleteByCode(roleCode);
+		permissionDao.deleteRolePmsByRoleCode(roleCode);
 	}
 
 	public List<Permission> getPermissionsByRoles(List<Role> roles) {
